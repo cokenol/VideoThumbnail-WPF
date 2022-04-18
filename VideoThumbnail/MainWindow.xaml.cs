@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,24 +19,70 @@ using System.Diagnostics;
 using NReco.VideoConverter;
 using System.Drawing.Imaging;
 using System.ComponentModel;
+using System.Windows.Forms;
 
 namespace VideoThumbnail
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window 
+    public partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
         }
+
+        private void btnFolderExecute(object sender, RoutedEventArgs e)
+        {
+            List<file> files = DirSearch(FolderLocation.Text);
+            if (files != null)
+            {
+                VideoFiles.ItemsSource = files;
+                VideoFiles.DisplayMemberPath = "FileName";
+                VideoFiles.SelectedValuePath = "Path";
+            }
+        }
+        public List<file> DirSearch(string sDir)
+        {
+            List<string> mediaExtensions = new List<string> { ".mp3", ".mp4", ".mov" };
+            List<file> filesFound = new List<file>();
+
+            foreach (string d in Directory.GetDirectories(sDir))
+            {
+                foreach (string f in Directory.GetFiles(d, "*.*"))
+                {
+                    //Console.WriteLine(f);
+                    //Console.WriteLine(System.IO.Path.GetExtension(f).ToLower());
+                    //Console.WriteLine(mediaExtensions.Contains(System.IO.Path.GetExtension(f).ToLower()));
+                    Console.WriteLine(System.IO.Path.GetFileName(f));
+                    if (mediaExtensions.Contains(System.IO.Path.GetExtension(f).ToLower()))
+                    {
+                        filesFound.Add(new file() { Path = f, FileName = System.IO.Path.GetFileName(f) });
+                    }
+                }
+                DirSearch(d);
+            }
+            Console.WriteLine(filesFound.Count);
+            return filesFound;
+        }
+        public class file
+        {
+            public string FileName { get; set; }
+            public string Path { get; set; }
+        }
         private void btnOpenFile_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            if (openFileDialog.ShowDialog() == true)
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 FileLocation.Text = openFileDialog.FileName;
             //FileLocation.Text = File.ReadAllText(openFileDialog.FileName);
+        }
+        private void btnOpenFolder_Click(object sender, RoutedEventArgs e)
+        {
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                FolderLocation.Text = fbd.SelectedPath;
         }
         private async void btnExecute(object sender, RoutedEventArgs e)
         {
@@ -55,7 +100,12 @@ namespace VideoThumbnail
 
             //method2            
             images.ItemsSource = GetListOfImages2(FileLocation.Text, 16);
-            
+
+        }
+        private void fileNameChanged_Do(string file)
+        {
+            //method2            
+            images.ItemsSource = GetListOfImages2(file, 16);
         }
         public static List<BitmapImage> GetListOfImages2(string video, int times)
         {
@@ -139,7 +189,12 @@ namespace VideoThumbnail
         {
             var ms = new MemoryStream(File.ReadAllBytes(path));
             return (Bitmap)System.Drawing.Image.FromStream(ms);
-        }        
+        }
+
+        private void VideoFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            fileNameChanged_Do(VideoFiles.SelectedValue.ToString());
+        }
     }
 
     public class ImageChecker : INotifyPropertyChanged //Hold control and hit period to add the using for this
@@ -157,28 +212,28 @@ namespace VideoThumbnail
             get { return _imageHeight; }
             set { _imageHeight = value; OnPropertyChanged("ImageHeight"); }
         }
-        private int _columnNums = 8;
+        private int _columnNums = 4;
         public int ColumnNums
         {
-            get { return _columnNums; }
-            set { _columnNums = value; OnPropertyChanged("ColumnNums"); }
+            get => _columnNums;
         }
         public void CheckedWidthHeight(int height, int width)
         {
+            int factor = 5;
             if (height > width)
             {
                 Console.WriteLine("Height {0} > Width {1} ",height, width);
-                _columnNums = 5;
-                _imageHeight = height / 10;
-                _imageWidth = width / 10;
+                _columnNums = 8;
+                _imageHeight = height / factor;
+                _imageWidth = width / factor;
                 Console.WriteLine("{0} {1}",ImageHeight.ToString(), ImageWidth.ToString());
             }
             else
             {
                 Console.WriteLine("Height {0} < Width {1} ", height, width);
                 _columnNums = 4;
-                _imageHeight = height / 10;
-                _imageWidth = width / 10;
+                _imageHeight = height / factor;
+                _imageWidth = width / factor;
                 Console.WriteLine("{0} {1}", ImageHeight.ToString(), ImageWidth.ToString());
             }
         }
