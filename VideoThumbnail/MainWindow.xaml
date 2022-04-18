@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:VideoThumbnail"
+        xmlns:local="clr-namespace:VideoThumbnail" d:DataContext="{d:DesignInstance Type=local:ImageChecker}"
         mc:Ignorable="d"
         Title="MainWindow" Height="700" Width="800" MinHeight="700" MinWidth="800">
     <Grid ShowGridLines="false">
@@ -28,12 +28,13 @@
         <ItemsControl x:Name="images" Grid.Row="1" Grid.RowSpan="4" Grid.ColumnSpan="4">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <UniformGrid Columns="4"/>
+                    <UniformGrid Columns="{Binding Path=ColumnNums}"/>
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Image Width="200" Height="150" Source="{Binding}"/>
+                    <Image Name="Thumbnail"  Width="{Binding DecodePixelWidth}" Height="{Binding DecodePixelHeight}" Source="{Binding}">
+                    </Image>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
