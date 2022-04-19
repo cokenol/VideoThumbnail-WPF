@@ -28,9 +28,11 @@ namespace VideoThumbnail
     /// </summary>
     public partial class MainWindow : Window
     {
+        IDictionary<string, List<BitmapImage>> thumbnailGenerated = new Dictionary<string, List<BitmapImage>>();
         public MainWindow()
         {
             InitializeComponent();
+            
         }
 
         private void btnFolderExecute(object sender, RoutedEventArgs e)
@@ -48,14 +50,14 @@ namespace VideoThumbnail
             List<string> mediaExtensions = new List<string> { ".mp3", ".mp4", ".mov" };
             List<file> filesFound = new List<file>();
 
-            foreach (string d in Directory.GetDirectories(sDir))
+            foreach (string d in Directory.GetDirectories(sDir, "*", SearchOption.AllDirectories))
             {
                 foreach (string f in Directory.GetFiles(d, "*.*"))
                 {
                     //Console.WriteLine(f);
                     //Console.WriteLine(System.IO.Path.GetExtension(f).ToLower());
                     //Console.WriteLine(mediaExtensions.Contains(System.IO.Path.GetExtension(f).ToLower()));
-                    Console.WriteLine(System.IO.Path.GetFileName(f));
+                    //Console.WriteLine(System.IO.Path.GetFileName(f));
                     if (mediaExtensions.Contains(System.IO.Path.GetExtension(f).ToLower()))
                     {
                         filesFound.Add(new file() { Path = f, FileName = System.IO.Path.GetFileName(f) });
@@ -63,7 +65,7 @@ namespace VideoThumbnail
                 }
                 DirSearch(d);
             }
-            Console.WriteLine(filesFound.Count);
+            //Console.WriteLine(filesFound.Count);
             return filesFound;
         }
         public class file
@@ -104,8 +106,18 @@ namespace VideoThumbnail
         }
         private void fileNameChanged_Do(string file)
         {
-            //method2            
-            images.ItemsSource = GetListOfImages2(file, 16);
+            //method2
+            List<BitmapImage> thumbnails = new List<BitmapImage>();
+            if (!thumbnailGenerated.ContainsKey(file))
+            {
+                thumbnails = GetListOfImages2(file, 16);
+                thumbnailGenerated[file] = thumbnails;
+            }
+            else
+            {
+                thumbnails = thumbnailGenerated[file];
+            }
+            images.ItemsSource = thumbnails;
         }
         public static List<BitmapImage> GetListOfImages2(string video, int times)
         {
@@ -134,6 +146,7 @@ namespace VideoThumbnail
                 //wh.SetWidthHeight(img);
                 imagesL.Add(img);
             }
+            
             return imagesL;
         }
         private static BitmapImage StreamToImage(MemoryStream stream,int height,int width)
@@ -191,10 +204,22 @@ namespace VideoThumbnail
             return (Bitmap)System.Drawing.Image.FromStream(ms);
         }
 
-        private void VideoFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void VideoFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            images.ItemsSource = "Loading Thumbnail...";
+            await Task.Delay(1);
             fileNameChanged_Do(VideoFiles.SelectedValue.ToString());
         }
+
+        private void btnPlayVideo(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start(VideoFiles.SelectedValue.ToString());
+        }
+    }
+    public class ThumbnailGenerated
+    {
+        public string pathName { get; set; }
+        public List<BitmapImage> bitmapImages { get; set; }
     }
 
     public class ImageChecker : INotifyPropertyChanged //Hold control and hit period to add the using for this
