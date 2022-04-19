@@ -20,6 +20,7 @@ using NReco.VideoConverter;
 using System.Drawing.Imaging;
 using System.ComponentModel;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace VideoThumbnail
 {
@@ -47,7 +48,7 @@ namespace VideoThumbnail
         }
         public List<file> DirSearch(string sDir)
         {
-            List<string> mediaExtensions = new List<string> { ".mp3", ".mp4", ".mov" };
+            List<string> mediaExtensions = new List<string> { ".mp4", ".mov" };
             List<file> filesFound = new List<file>();
 
             foreach (string d in Directory.GetDirectories(sDir, "*", SearchOption.AllDirectories))
@@ -102,6 +103,16 @@ namespace VideoThumbnail
 
             //method2            
             images.ItemsSource = GetListOfImages2(FileLocation.Text, 16);
+
+        }
+        private async void VideoFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            //Loading thumbnails shows up
+            Loading.Foreground = System.Windows.Media.Brushes.Black;
+            await Task.Delay(5);
+            fileNameChanged_Do(VideoFiles.SelectedValue.ToString());
+            //Loading thumbnails hides
+            Loading.Foreground = System.Windows.Media.Brushes.White;
 
         }
         private void fileNameChanged_Do(string file)
@@ -202,14 +213,7 @@ namespace VideoThumbnail
         {
             var ms = new MemoryStream(File.ReadAllBytes(path));
             return (Bitmap)System.Drawing.Image.FromStream(ms);
-        }
-
-        private async void VideoFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            images.ItemsSource = "Loading Thumbnail...";
-            await Task.Delay(1);
-            fileNameChanged_Do(VideoFiles.SelectedValue.ToString());
-        }
+        }        
 
         private void btnPlayVideo(object sender, RoutedEventArgs e)
         {
