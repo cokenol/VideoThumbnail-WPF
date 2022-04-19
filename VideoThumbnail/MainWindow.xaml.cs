@@ -29,7 +29,7 @@ namespace VideoThumbnail
     /// </summary>
     public partial class MainWindow : Window
     {
-        IDictionary<string, List<BitmapImage>> thumbnailGenerated = new Dictionary<string, List<BitmapImage>>();
+        IDictionary<string, List<thumbnail>> thumbnailGenerated = new Dictionary<string, List<thumbnail>>();
         public MainWindow()
         {
             InitializeComponent();
@@ -73,6 +73,13 @@ namespace VideoThumbnail
         {
             public string FileName { get; set; }
             public string Path { get; set; }
+        }
+        public class thumbnail
+        {
+            public BitmapImage image { get; set; }
+            public string path { get; set; }
+            public int position { get; set; }
+            public TimeSpan positionTime { get; set; }
         }
         private void btnOpenFile_Click(object sender, RoutedEventArgs e)
         {
@@ -118,7 +125,7 @@ namespace VideoThumbnail
         private void fileNameChanged_Do(string file)
         {
             //method2
-            List<BitmapImage> thumbnails = new List<BitmapImage>();
+            List<thumbnail> thumbnails = new List<thumbnail>();
             if (!thumbnailGenerated.ContainsKey(file))
             {
                 thumbnails = GetListOfImages2(file, 16);
@@ -130,9 +137,9 @@ namespace VideoThumbnail
             }
             images.ItemsSource = thumbnails;
         }
-        public static List<BitmapImage> GetListOfImages2(string video, int times)
+        public static List<thumbnail> GetListOfImages2(string video, int times)
         {
-            List<BitmapImage> imagesL = new List<BitmapImage>();
+            List<thumbnail> imagesL = new List<thumbnail>();
             FFMpegConverter ffMpeg = new FFMpegConverter();
             var ffProbe = new NReco.VideoInfo.FFProbe();
             var videoInfo = ffProbe.GetMediaInfo(video);
@@ -154,8 +161,16 @@ namespace VideoThumbnail
                 ffMpeg.GetVideoThumbnail(video, thumbJpegStream, position);
                 //Console.WriteLine(StreamToImage(thumbJpegStream));
                 var img = StreamToImage(thumbJpegStream, displayHeight, displayWidth);
-                //wh.SetWidthHeight(img);
-                imagesL.Add(img);
+
+                //try thumbnail class
+                thumbnail tb = new thumbnail();
+                tb.image = img;
+                tb.path = video;
+                tb.position = (int)position*1000;
+                tb.positionTime = TimeSpan.FromSeconds(position);
+                imagesL.Add(tb);
+
+                //imagesL.Add(img);
             }
             
             return imagesL;
@@ -208,22 +223,22 @@ namespace VideoThumbnail
 
             return image;
         }
-        
-        static Bitmap LoadImage(string path)
-        {
-            var ms = new MemoryStream(File.ReadAllBytes(path));
-            return (Bitmap)System.Drawing.Image.FromStream(ms);
-        }        
 
         private void btnPlayVideo(object sender, RoutedEventArgs e)
         {
             System.Diagnostics.Process.Start(VideoFiles.SelectedValue.ToString());
         }
-    }
-    public class ThumbnailGenerated
-    {
-        public string pathName { get; set; }
-        public List<BitmapImage> bitmapImages { get; set; }
+
+        private void PlayVideo(object sender, MouseButtonEventArgs e)
+        {
+            var img = (System.Windows.Controls.Image)sender;
+            ProcessStartInfo startInfo = new ProcessStartInfo(@"C:\Program Files\MPC-HC\mpc-hc64.exe");
+            startInfo.WindowStyle = ProcessWindowStyle.Normal;
+
+            startInfo.Arguments = VideoFiles.SelectedValue.ToString() + " /start " + img.Tag.ToString();
+            Process.Start(startInfo);
+            System.Windows.MessageBox.Show(VideoFiles.SelectedValue.ToString() + " /start " + img.Tag.ToString());
+        }
     }
 
     public class ImageChecker : INotifyPropertyChanged //Hold control and hit period to add the using for this
@@ -251,19 +266,19 @@ namespace VideoThumbnail
             int factor = 5;
             if (height > width)
             {
-                Console.WriteLine("Height {0} > Width {1} ",height, width);
+                //Console.WriteLine("Height {0} > Width {1} ",height, width);
                 _columnNums = 8;
                 _imageHeight = height / factor;
                 _imageWidth = width / factor;
-                Console.WriteLine("{0} {1}",ImageHeight.ToString(), ImageWidth.ToString());
+                //Console.WriteLine("{0} {1}",ImageHeight.ToString(), ImageWidth.ToString());
             }
             else
             {
-                Console.WriteLine("Height {0} < Width {1} ", height, width);
+                //Console.WriteLine("Height {0} < Width {1} ", height, width);
                 _columnNums = 4;
                 _imageHeight = height / factor;
                 _imageWidth = width / factor;
-                Console.WriteLine("{0} {1}", ImageHeight.ToString(), ImageWidth.ToString());
+                //Console.WriteLine("{0} {1}", ImageHeight.ToString(), ImageWidth.ToString());
             }
         }
         public void SetWidthHeight(BitmapImage img)
