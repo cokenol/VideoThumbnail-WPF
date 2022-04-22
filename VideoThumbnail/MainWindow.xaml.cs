@@ -21,6 +21,7 @@ using System.Drawing.Imaging;
 using System.ComponentModel;
 using System.Windows.Forms;
 using System.Threading;
+using Microsoft.Win32;
 
 namespace VideoThumbnail
 {
@@ -83,7 +84,7 @@ namespace VideoThumbnail
         }
         private void btnOpenFile_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
+            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
             if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 FileLocation.Text = openFileDialog.FileName;
             //FileLocation.Text = File.ReadAllText(openFileDialog.FileName);
@@ -237,7 +238,33 @@ namespace VideoThumbnail
 
             startInfo.Arguments = VideoFiles.SelectedValue.ToString() + " /start " + img.Tag.ToString();
             Process.Start(startInfo);
-            System.Windows.MessageBox.Show(VideoFiles.SelectedValue.ToString() + " /start " + img.Tag.ToString());
+            //System.Windows.MessageBox.Show(VideoFiles.SelectedValue.ToString() + " /start " + img.Tag.ToString());
+        }
+        public void GetVideoPlayer(object sender, RoutedEventArgs e)
+        {
+            const string extPathTemplate = @"HKEY_CLASSES_ROOT\{0}";
+            const string cmdPathTemplate = @"HKEY_CLASSES_ROOT\{0}\shell\open\command";
+
+            // 1. Find out document type name for .jpeg files
+            const string ext = ".mp4";
+
+            var extPath = string.Format(extPathTemplate, ext);
+
+            var docName = Registry.GetValue(extPath, string.Empty, string.Empty) as string;
+            if (!string.IsNullOrEmpty(docName))
+            {
+                // 2. Find out which command is associated with our extension
+                var associatedCmdPath = string.Format(cmdPathTemplate, docName);
+                var associatedCmd =
+                    Registry.GetValue(associatedCmdPath, string.Empty, string.Empty) as string;
+
+                if (!string.IsNullOrEmpty(associatedCmd))
+                {
+                    Console.WriteLine("\"{0}\" command is associated with {1} extension", associatedCmd, ext);
+                }
+                //return associatedCmd;
+            }
+            //return "";
         }
     }
 
