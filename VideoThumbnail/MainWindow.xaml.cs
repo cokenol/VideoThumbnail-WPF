@@ -22,6 +22,7 @@ using System.ComponentModel;
 using System.Windows.Forms;
 using System.Threading;
 using Microsoft.Win32;
+using System.Text.RegularExpressions;
 
 namespace VideoThumbnail
 {
@@ -36,6 +37,12 @@ namespace VideoThumbnail
             InitializeComponent();
         }
 
+        private void btnOpenFolder_Click(object sender, RoutedEventArgs e)
+        {
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                FolderLocation.Text = fbd.SelectedPath;
+        }
         private void btnFolderExecute(object sender, RoutedEventArgs e)
         {
             List<file> files = DirSearch(FolderLocation.Text);
@@ -59,9 +66,13 @@ namespace VideoThumbnail
                     //Console.WriteLine(System.IO.Path.GetExtension(f).ToLower());
                     //Console.WriteLine(mediaExtensions.Contains(System.IO.Path.GetExtension(f).ToLower()));
                     //Console.WriteLine(System.IO.Path.GetFileName(f));
+                    Regex re = new Regex(@"thumbnail");
                     if (mediaExtensions.Contains(System.IO.Path.GetExtension(f).ToLower()))
                     {
-                        filesFound.Add(new file() { Path = f, FileName = System.IO.Path.GetFileName(f) });
+                        if(!re.IsMatch(System.IO.Path.GetFileName(f)))
+                        {
+                            filesFound.Add(new file() { Path = f, FileName = System.IO.Path.GetFileName(f) });
+                        }
                     }
                 }
                 DirSearch(d);
@@ -78,8 +89,13 @@ namespace VideoThumbnail
         {
             public BitmapImage image { get; set; }
             public string path { get; set; }
+            public string folderpath { get; set; }
+            public string thumbnailClipPath { get; set; }
             public int position { get; set; }
             public TimeSpan positionTime { get; set; }
+            public int tWidth { get; set; }
+            public int tHeight { get; set; }
+
         }
         private void btnOpenFile_Click(object sender, RoutedEventArgs e)
         {
@@ -87,12 +103,6 @@ namespace VideoThumbnail
             if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 FileLocation.Text = openFileDialog.FileName;
             //FileLocation.Text = File.ReadAllText(openFileDialog.FileName);
-        }
-        private void btnOpenFolder_Click(object sender, RoutedEventArgs e)
-        {
-            FolderBrowserDialog fbd = new FolderBrowserDialog();
-            if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                FolderLocation.Text = fbd.SelectedPath;
         }
         private async void btnExecute(object sender, RoutedEventArgs e)
         {
@@ -114,36 +124,67 @@ namespace VideoThumbnail
         }
         private async void VideoFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            //Loading thumbnails shows up
-            Loading.Foreground = System.Windows.Media.Brushes.Black;
-            await Task.Delay(5);
-            fileNameChanged_Do(VideoFiles.SelectedValue.ToString());
-            //Loading thumbnails hides
-            Loading.Foreground = System.Windows.Media.Brushes.White;
+            try
+            {
+                //Loading thumbnails shows up
+                Loading.Foreground = System.Windows.Media.Brushes.Black;
+                await Task.Delay(5);
+                if(VideoFiles.SelectedValue != null)
+                {
+                    fileNameChanged_Do(VideoFiles.SelectedValue.ToString());
+                }
+                //Loading thumbnails hides
+                Loading.Foreground = System.Windows.Media.Brushes.White;
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(ex.ToString());
+            }
 
         }
         private void fileNameChanged_Do(string file)
         {
-            //method2
             List<thumbnail> thumbnails = new List<thumbnail>();
+            //method2
+            //if (!thumbnailGenerated.ContainsKey(file))
+            //{
+            //    thumbnails = GetListOfImages2(file, 16);
+            //    thumbnailGenerated[file] = thumbnails;
+            //}
+            //else
+            //{
+            //    thumbnails = thumbnailGenerated[file];
+            //}
+            //images.ItemsSource = thumbnails;
+
+
+            //for thumbnail clips
+            string fileNameNoExt = System.IO.Path.GetFileNameWithoutExtension(file);
             if (!thumbnailGenerated.ContainsKey(file))
             {
-                thumbnails = GetListOfImages2(file, 16);
+                if (Directory.Exists(System.IO.Path.GetDirectoryName(file) + @"\" + fileNameNoExt + @"_clip\"))
+                {
+                    thumbnails = GetListOfImages2FromFile(file, 16);
+                }
+                else
+                {
+                    thumbnails = GetListOfImages2(file, 16);
+                }
                 thumbnailGenerated[file] = thumbnails;
             }
             else
             {
                 thumbnails = thumbnailGenerated[file];
             }
-            images.ItemsSource = thumbnails;
-            //foreach (var item in images)
+            //if (Directory.Exists(System.IO.Path.GetDirectoryName(file) + @"\" + fileNameNoExt + @"_clip\"))
             //{
-            //    MediaElement player = (MediaElement)item;
-            //    if (player.CanSeek)
-            //    {
-            //        player.Position = new TimeSpan(0, 0, 0, 0, 5000);
-            //    }
+            //    thumbnails = GetListOfImages2FromFile(file, 16);
             //}
+            //else
+            //{
+            //    thumbnails = GetListOfImages2(file, 16);             
+            //}
+            images.ItemsSource = thumbnails;
         }
         public static List<thumbnail> GetListOfImages2(string video, int times)
         {
@@ -163,24 +204,107 @@ namespace VideoThumbnail
             for (float i = 0; i < times; i++)
             {
                 //Console.WriteLine("doing {0}", i);
-                var thumbJpegStream = new MemoryStream();
+                // saving thumbnail to image
+                //var thumbJpegStream = new MemoryStream();
                 float position = (float)duration * i / times;
-                //Console.WriteLine(position);
-                ffMpeg.GetVideoThumbnail(video, thumbJpegStream, position);
-                //Console.WriteLine(StreamToImage(thumbJpegStream));
-                var img = StreamToImage(thumbJpegStream, displayHeight, displayWidth);
+                //ffMpeg.GetVideoThumbnail(video, thumbJpegStream, position);
+                //var img = StreamToImage(thumbJpegStream, displayHeight, displayWidth);
+
+                //saving thumbnail clip to file
+                ConvertSettings cs = new ConvertSettings();
+                cs.Seek = (int)position;
+                cs.MaxDuration = 5;
+                cs.SetVideoFrameSize(displayWidth, displayHeight);
+                string filename = System.IO.Path.GetFileNameWithoutExtension(video);
+                var outputFile = System.IO.Path.GetDirectoryName(video) + @"\" + filename + @"_clip\" + string.Format("thumbnail_{0}.mp4",i);
+                try
+                {
+                    ffMpeg.ConvertMedia(video, "mp4", outputFile, Format.mp4, cs);
+                }
+                catch (Exception)
+                {
+                    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(video) + @"\" + filename + @"_clip\");
+                    ffMpeg.ConvertMedia(video, "mp4", outputFile, Format.mp4, cs);                
+                }
+                Console.WriteLine(outputFile);
+
 
                 //try thumbnail class
                 thumbnail tb = new thumbnail();
-                tb.image = img;
+                //tb.image = img;
                 tb.path = video;
+                tb.folderpath = System.IO.Path.GetDirectoryName(video);
+                tb.thumbnailClipPath = outputFile;
                 tb.position = (int)position*1000;
                 tb.positionTime = TimeSpan.FromSeconds(position);
+                tb.tWidth = displayWidth;
+                tb.tHeight = displayHeight;
                 imagesL.Add(tb);
 
                 //imagesL.Add(img);
             }
             
+            return imagesL;
+        }
+
+        public static List<thumbnail> GetListOfImages2FromFile(string video, int times)
+        {
+            List<thumbnail> imagesL = new List<thumbnail>();
+            FFMpegConverter ffMpeg = new FFMpegConverter();
+            var ffProbe = new NReco.VideoInfo.FFProbe();
+            var videoInfo = ffProbe.GetMediaInfo(video);
+            double duration = videoInfo.Duration.TotalSeconds;
+            int height = videoInfo.Streams[0].Height;
+            int width = videoInfo.Streams[0].Width;
+            //Console.WriteLine("W= {0} x H ={1}", width, height);
+            ImageChecker wh = new ImageChecker { ImageWidth = 200, ImageHeight = 150 };
+            //wh.CheckedWidthHeight(height, width);
+            int displayWidth = wh.ImageWidth;
+            int displayHeight = wh.ImageHeight;
+
+            for (float i = 0; i < times; i++)
+            {
+                //Console.WriteLine("doing {0}", i);
+                // saving thumbnail to image
+                //var thumbJpegStream = new MemoryStream();
+                float position = (float)duration * i / times;
+                //ffMpeg.GetVideoThumbnail(video, thumbJpegStream, position);
+                //var img = StreamToImage(thumbJpegStream, displayHeight, displayWidth);
+
+                //saving thumbnail clip to file
+                //ConvertSettings cs = new ConvertSettings();
+                //cs.Seek = (int)position;
+                //cs.MaxDuration = 5;
+                //cs.SetVideoFrameSize(displayWidth, displayHeight);
+                string filename = System.IO.Path.GetFileNameWithoutExtension(video);
+                var outputFile = System.IO.Path.GetDirectoryName(video) + @"\" + filename + @"_clip\" + string.Format("thumbnail_{0}.mp4", i);
+                //try
+                //{
+                //    ffMpeg.ConvertMedia(video, "mp4", outputFile, Format.mp4, cs);
+                //}
+                //catch (Exception)
+                //{
+                //    System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(video) + @"\" + filename + @"_clip\");
+                //    ffMpeg.ConvertMedia(video, "mp4", outputFile, Format.mp4, cs);
+                //}
+                //Console.WriteLine(outputFile);
+
+
+                //try thumbnail class
+                thumbnail tb = new thumbnail();
+                //tb.image = img;
+                tb.path = video;
+                tb.folderpath = System.IO.Path.GetDirectoryName(video);
+                tb.thumbnailClipPath = outputFile;
+                tb.position = (int)position * 1000;
+                tb.positionTime = TimeSpan.FromSeconds(position);
+                tb.tWidth = displayWidth;
+                tb.tHeight = displayHeight;
+                imagesL.Add(tb);
+
+                //imagesL.Add(img);
+            }
+
             return imagesL;
         }
         private static BitmapImage StreamToImage(MemoryStream stream,int height,int width)
@@ -286,22 +410,22 @@ namespace VideoThumbnail
         private void mediaElement1_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
             MediaElement me = (MediaElement)sender;
-            me.Position = (TimeSpan)me.Tag;
+            //me.Position = (TimeSpan)me.Tag;
             me.Play();
         }
 
         private void mediaElement1_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
             MediaElement me = (MediaElement)sender;
-            me.Pause();
-            me.Position = (TimeSpan)me.Tag;
+            me.Stop();
+            //me.Position = (TimeSpan)me.Tag;
         }
 
         private void mediaElement1_Loaded(object sender, RoutedEventArgs e)
         {
             MediaElement me = (MediaElement)sender;
             me.Pause();
-            me.Position = (TimeSpan) me.Tag;
+            //me.Position = (TimeSpan) me.Tag;
         }       
     
     }

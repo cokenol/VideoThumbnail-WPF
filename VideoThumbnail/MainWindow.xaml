@@ -63,17 +63,18 @@
                         -->
                         <MediaElement Margin="12"
                                       Name="Video"
-                                      Source="{Binding path}"
+                                      Source="{Binding thumbnailClipPath}"
+                                      Stretch="Uniform"
                                       LoadedBehavior="Manual"                      
                                       MouseEnter="mediaElement1_MouseEnter"
                                       MouseLeave="mediaElement1_MouseLeave"
                                       Loaded="mediaElement1_Loaded"
                                       ScrubbingEnabled="True"
-                                      Position="1"
-                                      MinWidth="{Binding DecodePixelWidth}"
-                                      MinHeight="{Binding DecodePixelHeight}"
-                                      Tag="{Binding positionTime}"
+                                      MinWidth="{Binding tWidth}"
+                                      MinHeight="{Binding tHeight}"
+                                      Volume="0"
                                       />
+                                      <!--Loaded="mediaElement1_Loaded"-->
                         <TextBlock Text="{Binding positionTime}"></TextBlock>
                     </StackPanel>
                 </DataTemplate>
