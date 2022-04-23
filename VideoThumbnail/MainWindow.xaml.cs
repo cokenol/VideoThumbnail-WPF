@@ -34,7 +34,6 @@ namespace VideoThumbnail
         public MainWindow()
         {
             InitializeComponent();
-            
         }
 
         private void btnFolderExecute(object sender, RoutedEventArgs e)
@@ -137,6 +136,14 @@ namespace VideoThumbnail
                 thumbnails = thumbnailGenerated[file];
             }
             images.ItemsSource = thumbnails;
+            //foreach (var item in images)
+            //{
+            //    MediaElement player = (MediaElement)item;
+            //    if (player.CanSeek)
+            //    {
+            //        player.Position = new TimeSpan(0, 0, 0, 0, 5000);
+            //    }
+            //}
         }
         public static List<thumbnail> GetListOfImages2(string video, int times)
         {
@@ -240,6 +247,16 @@ namespace VideoThumbnail
             Process.Start(startInfo);
             //System.Windows.MessageBox.Show(VideoFiles.SelectedValue.ToString() + " /start " + img.Tag.ToString());
         }
+        private void PlayVideoFromStack(object sender, MouseButtonEventArgs e)
+        {
+            var img = (System.Windows.Controls.StackPanel)sender;
+            ProcessStartInfo startInfo = new ProcessStartInfo(@"C:\Program Files\MPC-HC\mpc-hc64.exe");
+            startInfo.WindowStyle = ProcessWindowStyle.Normal;
+
+            startInfo.Arguments = VideoFiles.SelectedValue.ToString() + " /start " + img.Tag.ToString();
+            Process.Start(startInfo);
+            //System.Windows.MessageBox.Show(VideoFiles.SelectedValue.ToString() + " /start " + img.Tag.ToString());
+        }
         public void GetVideoPlayer(object sender, RoutedEventArgs e)
         {
             const string extPathTemplate = @"HKEY_CLASSES_ROOT\{0}";
@@ -266,6 +283,27 @@ namespace VideoThumbnail
             }
             //return "";
         }
+        private void mediaElement1_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            MediaElement me = (MediaElement)sender;
+            me.Position = (TimeSpan)me.Tag;
+            me.Play();
+        }
+
+        private void mediaElement1_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            MediaElement me = (MediaElement)sender;
+            me.Pause();
+            me.Position = (TimeSpan)me.Tag;
+        }
+
+        private void mediaElement1_Loaded(object sender, RoutedEventArgs e)
+        {
+            MediaElement me = (MediaElement)sender;
+            me.Pause();
+            me.Position = (TimeSpan) me.Tag;
+        }       
+    
     }
 
     public class ImageChecker : INotifyPropertyChanged //Hold control and hit period to add the using for this
