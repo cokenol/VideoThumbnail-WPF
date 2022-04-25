@@ -55,7 +55,7 @@ namespace VideoThumbnail
         }
         public List<file> DirSearch(string sDir)
         {
-            List<string> mediaExtensions = new List<string> { ".mp4", ".mov" };
+            List<string> mediaExtensions = new List<string> { ".mp4", ".mov", ".mkv"};
             List<file> filesFound = new List<file>();
 
             foreach (string d in Directory.GetDirectories(sDir, "*", SearchOption.AllDirectories))
@@ -72,6 +72,7 @@ namespace VideoThumbnail
                         if(!re.IsMatch(System.IO.Path.GetFileName(f)))
                         {
                             filesFound.Add(new file() { Path = f, FileName = System.IO.Path.GetFileName(f) });
+                            Console.WriteLine("Path = {0}, Filename = {1}", f, System.IO.Path.GetFileName(f));
                         }
                     }
                 }
@@ -214,19 +215,24 @@ namespace VideoThumbnail
                 ConvertSettings cs = new ConvertSettings();
                 cs.Seek = (int)position;
                 cs.MaxDuration = 5;
-                cs.SetVideoFrameSize(displayWidth, displayHeight);
+                cs.SetVideoFrameSize(displayWidth,displayHeight);
                 string filename = System.IO.Path.GetFileNameWithoutExtension(video);
-                var outputFile = System.IO.Path.GetDirectoryName(video) + @"\" + filename + @"_clip\" + string.Format("thumbnail_{0}.mp4",i);
+                string fileExt = System.IO.Path.GetExtension(video).Replace(".","");
+                Console.WriteLine(fileExt);
+                string outputFile = System.IO.Path.GetDirectoryName(video) + @"\" + filename + @"_clip\" + string.Format("thumbnail_{0}.mp4",i);
+                Console.WriteLine(outputFile);
                 try
                 {
-                    ffMpeg.ConvertMedia(video, "mp4", outputFile, Format.mp4, cs);
-                }
-                catch (Exception)
-                {
                     System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(video) + @"\" + filename + @"_clip\");
-                    ffMpeg.ConvertMedia(video, "mp4", outputFile, Format.mp4, cs);                
+                    ffMpeg.ConvertMedia(video, null, outputFile, Format.mp4, cs);
                 }
-                Console.WriteLine(outputFile);
+                catch (Exception ex)
+                {
+                    //System.Windows.MessageBox.Show(ex.ToString());
+                    cs.VideoFrameSize = "qvga";
+                    ffMpeg.ConvertMedia(video, null, outputFile, Format.mp4, cs);
+                }
+                
 
 
                 //try thumbnail class
