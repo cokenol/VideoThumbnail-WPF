@@ -32,6 +32,7 @@ namespace VideoThumbnail
     public partial class MainWindow : Window
     {
         IDictionary<string, List<thumbnail>> thumbnailGenerated = new Dictionary<string, List<thumbnail>>();
+
         public MainWindow()
         {
             InitializeComponent();
@@ -43,8 +44,10 @@ namespace VideoThumbnail
             if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 FolderLocation.Text = fbd.SelectedPath;
         }
-        private void btnFolderExecute(object sender, RoutedEventArgs e)
+        private async void btnFolderExecute(object sender, RoutedEventArgs e)
         {
+            Loading.Text = "Getting files";
+            await Task.Delay(5);
             List<file> files = DirSearch(FolderLocation.Text);
             if (files != null)
             {
@@ -52,6 +55,56 @@ namespace VideoThumbnail
                 VideoFiles.DisplayMemberPath = "FileName";
                 VideoFiles.SelectedValuePath = "Path";
             }
+            Loading.Text = "";
+        }
+        private async void btnFolderCreate(object sender, RoutedEventArgs e)
+        {
+            progressBar_overall.Maximum = 100;
+            int total = VideoFiles.Items.Count;
+            Loading.Text = string.Format("Batch {0} clips 0%", total);
+            var progress_overall = new Progress<int>(v =>
+            {
+                // This lambda is executed in context of UI thread,
+                // so it can safely update form controls
+                progressBar_overall.Value = v;
+                Loading.Text = string.Format("Batch {0} clips {1}%", total, v);
+            });
+
+            
+            System.Collections.IEnumerable files = VideoFiles.ItemsSource;
+            //System.Windows.Controls.ProgressBar progressBar_tb = progressBar;
+            
+            await Task.Run(() => CreateThumbnailAll(progress_overall, total, files));
+            Loading.Text = "";
+            progressBar_overall.Value = 0;
+        }
+        public void CreateThumbnailAll(IProgress<int> progress_overall, int total, System.Collections.IEnumerable files)
+        {
+            // This method is executed in the context of
+            // another thread (different than the main UI thread),
+            // so use only thread-safe code
+            //progressBar_tb.Maximum = 100;
+            
+            var progress = new Progress<int>(v =>
+            {
+                // This lambda is executed in context of UI thread,
+                // so it can safely update form controls
+                //progressBar_tb.Value = v;
+            });
+            int i = 0;
+            foreach (file file in files)
+            {
+                fileNameChanged(progress, file.Path);
+
+                // Use progress to notify UI thread that progress has
+                // changed
+                if (progress_overall != null)
+                {
+                    progress_overall.Report((i + 1) * 100 / total);
+                }
+                i++;
+            }
+            System.Windows.MessageBox.Show("All " + total.ToString() + " videos thumbnail clips created");
         }
         public List<file> DirSearch(string sDir)
         {
@@ -98,20 +151,19 @@ namespace VideoThumbnail
             public int tHeight { get; set; }
 
         }
-        private void btnOpenFile_Click(object sender, RoutedEventArgs e)
-        {
-            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
-            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                FileLocation.Text = openFileDialog.FileName;
-            //FileLocation.Text = File.ReadAllText(openFileDialog.FileName);
-        }
-        private async void btnExecute(object sender, RoutedEventArgs e)
-        {
-            ExecuteFileButton.Content = "Doing...";
-            await Task.Delay(1);
-            btnExecute_Do();
-            ExecuteFileButton.Content = "Execute";
-        }
+        //private void btnOpenFile_Click(object sender, RoutedEventArgs e)
+        //{
+        //    System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
+        //    if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+        //        FileLocation.Text = openFileDialog.FileName;
+        //}
+        //private async void btnExecute(object sender, RoutedEventArgs e)
+        //{
+        //    ExecuteFileButton.Content = "Doing...";
+        //    await Task.Delay(1);
+        //    btnExecute_Do();
+        //    ExecuteFileButton.Content = "Execute";
+        //}
         private void btnExecute_Do()
         {
             //method 1
@@ -120,7 +172,7 @@ namespace VideoThumbnail
             //images.ItemsSource = GetListOfImages(bm, 20);
 
             //method2            
-            images.ItemsSource = GetListOfImages2(FileLocation.Text, 16);
+            //images.ItemsSource = GetListOfImages2(FileLocation.Text, 16);
 
         }
         private async void VideoFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -128,37 +180,38 @@ namespace VideoThumbnail
             try
             {
                 //Loading thumbnails shows up
-                Loading.Foreground = System.Windows.Media.Brushes.Black;
+                Loading.Text = "Loading Thumbnail...";
                 await Task.Delay(5);
-                if(VideoFiles.SelectedValue != null)
+                progressBar.Maximum = 100;
+                var progress = new Progress<int>(v =>
                 {
-                    fileNameChanged_Do(VideoFiles.SelectedValue.ToString());
+                    // This lambda is executed in context of UI thread,
+                    // so it can safely update form controls
+                    progressBar.Value = v;
+                });
+
+                if (VideoFiles.SelectedValue != null)
+                {
+                    string file = VideoFiles.SelectedValue.ToString();
+                    var val = await Task.Run(() => fileNameChanged(progress, file));
+                    await Task.Delay(5);
+                    progressBar.Value = 100;                    
+                    images.ItemsSource = val;
                 }
                 //Loading thumbnails hides
-                Loading.Foreground = System.Windows.Media.Brushes.White;
+                Loading.Text = "";
             }
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show(ex.ToString());
             }
+            await Task.Delay(5);
+            progressBar.Value = 0;
 
         }
-        private void fileNameChanged_Do(string file)
+        private List<thumbnail> fileNameChanged(IProgress<int> progress, string file)
         {
             List<thumbnail> thumbnails = new List<thumbnail>();
-            //method2
-            //if (!thumbnailGenerated.ContainsKey(file))
-            //{
-            //    thumbnails = GetListOfImages2(file, 16);
-            //    thumbnailGenerated[file] = thumbnails;
-            //}
-            //else
-            //{
-            //    thumbnails = thumbnailGenerated[file];
-            //}
-            //images.ItemsSource = thumbnails;
-
-
             //for thumbnail clips
             string fileNameNoExt = System.IO.Path.GetFileNameWithoutExtension(file);
             if (!thumbnailGenerated.ContainsKey(file))
@@ -169,7 +222,8 @@ namespace VideoThumbnail
                 }
                 else
                 {
-                    thumbnails = GetListOfImages2(file, 16);
+                    thumbnails = GetListOfImages2(file, 16, progress);
+                    
                 }
                 thumbnailGenerated[file] = thumbnails;
             }
@@ -177,17 +231,14 @@ namespace VideoThumbnail
             {
                 thumbnails = thumbnailGenerated[file];
             }
-            //if (Directory.Exists(System.IO.Path.GetDirectoryName(file) + @"\" + fileNameNoExt + @"_clip\"))
-            //{
-            //    thumbnails = GetListOfImages2FromFile(file, 16);
-            //}
-            //else
-            //{
-            //    thumbnails = GetListOfImages2(file, 16);             
-            //}
-            images.ItemsSource = thumbnails;
+            //images.ItemsSource = thumbnails;
+            return thumbnails;
         }
-        public static List<thumbnail> GetListOfImages2(string video, int times)
+        private void fileNameChanged_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            progressBar.Value = e.ProgressPercentage;
+        }
+        public static List<thumbnail> GetListOfImages2(string video, int times, IProgress<int> progress)
         {
             List<thumbnail> imagesL = new List<thumbnail>();
             FFMpegConverter ffMpeg = new FFMpegConverter();
@@ -211,6 +262,11 @@ namespace VideoThumbnail
                 //ffMpeg.GetVideoThumbnail(video, thumbJpegStream, position);
                 //var img = StreamToImage(thumbJpegStream, displayHeight, displayWidth);
 
+                // Use progress to notify UI thread that progress has
+                // changed
+                if (progress != null)
+                    progress.Report((int)i * 100 / times);
+
                 //saving thumbnail clip to file
                 ConvertSettings cs = new ConvertSettings();
                 cs.Seek = (int)position;
@@ -226,7 +282,7 @@ namespace VideoThumbnail
                     System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(video) + @"\" + filename + @"_clip\");
                     ffMpeg.ConvertMedia(video, null, outputFile, Format.mp4, cs);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     //System.Windows.MessageBox.Show(ex.ToString());
                     cs.VideoFrameSize = "qvga";
@@ -432,8 +488,9 @@ namespace VideoThumbnail
             MediaElement me = (MediaElement)sender;
             me.Pause();
             //me.Position = (TimeSpan) me.Tag;
-        }       
-    
+        }
+
+        
     }
 
     public class ImageChecker : INotifyPropertyChanged //Hold control and hit period to add the using for this

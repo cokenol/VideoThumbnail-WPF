@@ -5,27 +5,27 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VideoThumbnail" d:DataContext="{d:DesignInstance Type=local:ImageChecker}"
         mc:Ignorable="d"
-        Title="VideoThumbnail" Height="700" Width="800" MinHeight="700" MinWidth="800">
+        Title="VideoThumbnail" Height="700" Width="1000" MinHeight="700" MinWidth="800" Icon="VideoPreviewer.ico">
     <Grid ShowGridLines="false">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200"></ColumnDefinition>
+            <ColumnDefinition Width="400"></ColumnDefinition>
             <ColumnDefinition Width="200"></ColumnDefinition>
             <ColumnDefinition Width="200"></ColumnDefinition>
             <ColumnDefinition Width="200"></ColumnDefinition>
             <ColumnDefinition Width="*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="100"></RowDefinition>
+            <RowDefinition Height="150"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
         </Grid.RowDefinitions>
-        <Button Name="GetFileButton" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Click="btnOpenFile_Click" Content="GetFile"  Width="93"/>
-        <TextBox Name="FileLocation" Grid.Column="1" Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Center" TextWrapping="Wrap" Text="File Location" Width="284" Height="20"/>
-        <Button Name="ExecuteFileButton" Grid.Column="2" Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Center" Click="btnExecute" Content="Execute"/>
         <ListBox Name="VideoFiles" Grid.Row="1" Grid.RowSpan="4" Grid.Column="0" SelectionChanged="VideoFiles_SelectionChanged"></ListBox>
-        <TextBlock Name="Loading" Foreground="white" Text="Loading Thumbnail..." Grid.Row="0" Grid.Column="3" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="center"></TextBlock>
+        <TextBlock Name="Loading" Text="" Grid.Row="0" Grid.Column="1" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="center"></TextBlock>
+        <ProgressBar x:Name="progressBar_overall" Grid.Row="0" Grid.Column="3" Height="20"  Margin="23,45,27,85"/>
+        <ProgressBar Name="progressBar" Grid.Row="0" Grid.Column="3" Height="20"  Margin="23,74,27,5"></ProgressBar>
+
         <!--<Border Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="1" Grid.RowSpan="4" BorderBrush="black" BorderThickness="3"></Border>-->
 
         <ItemsControl x:Name="images" Grid.Row="1" Grid.Column="1" Grid.RowSpan="4" Grid.ColumnSpan="5">
@@ -73,8 +73,9 @@
                                       MinWidth="{Binding tWidth}"
                                       MinHeight="{Binding tHeight}"
                                       Volume="0"
+                                      ToolTip="Play video from here"
                                       />
-                                      <!--Loaded="mediaElement1_Loaded"-->
+                        <!--Loaded="mediaElement1_Loaded"-->
                         <TextBlock Text="{Binding positionTime}"></TextBlock>
                     </StackPanel>
                 </DataTemplate>
@@ -86,9 +87,13 @@
         <!--<Border Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="1" Grid.RowSpan="4" BorderBrush="black" BorderThickness="3"></Border>-->
 
 
-        <Button x:Name="FolderExecuteBtn" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Top" Click="btnFolderExecute" Content="Execute" Margin="155,10,0,0"/>
+        <Button x:Name="FolderExecuteBtn" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Top" Click="btnFolderExecute" Content="Get files" Margin="0,10,50,0" />
         <Button x:Name="GetFolder" HorizontalAlignment="Center" VerticalAlignment="Top" Click="btnOpenFolder_Click" Content="GetFolder"  Width="92" Margin="0,10,0,0"/>
         <Button x:Name="Play" HorizontalAlignment="Center" VerticalAlignment="Top" Click="btnPlayVideo" Content="Play Video"  Width="92" Margin="0,69,0,0"/>
+        <Button x:Name="FolderExecuteCreate_Btn" Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Top" Click="btnFolderCreate" Content=" Batch Create Thumbnail" Margin="0,10,0,0"/>
+        <TextBlock x:Name="OverallProgress" Text="Overall Progress:" Grid.Column="3" FontSize="10" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="23,32,0,0"/>
+        <TextBlock x:Name="ThumbnailProgressTitle" Text="Thumbnail Progress:" Grid.Column="3" FontSize="10" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="23,86,0,0"/>
+
 
 
     </Grid>
