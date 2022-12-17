@@ -32,6 +32,7 @@ namespace VideoThumbnail
     public partial class MainWindow : Window
     {
         IDictionary<string, List<thumbnail>> thumbnailGenerated = new Dictionary<string, List<thumbnail>>();
+        List<file> files = new List<file>();
 
         public MainWindow()
         {
@@ -44,11 +45,16 @@ namespace VideoThumbnail
             if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 FolderLocation.Text = fbd.SelectedPath;
         }
-        private async void btnFolderExecute(object sender, RoutedEventArgs e)
+        private void btnFolderExecute(object sender, RoutedEventArgs e)
+        {
+            SearchFolder();
+        }
+        private async void SearchFolder()
         {
             Loading.Text = "Getting files";
             await Task.Delay(5);
             List<file> files = DirSearch(FolderLocation.Text);
+            //files.Shuffle();
             if (files != null)
             {
                 VideoFiles.ItemsSource = files;
@@ -57,6 +63,7 @@ namespace VideoThumbnail
             }
             Loading.Text = "";
         }
+        
         private async void btnFolderCreate(object sender, RoutedEventArgs e)
         {
             progressBar_overall.Maximum = 100;
@@ -134,6 +141,37 @@ namespace VideoThumbnail
             //Console.WriteLine(filesFound.Count);
             return filesFound;
         }
+        public List<file> DirSearch(string sDir, string searchTerm)
+        {
+            List<string> mediaExtensions = new List<string> { ".mp4", ".mov", ".mkv" };
+            List<file> filesFound = new List<file>();
+
+            foreach (string d in Directory.GetDirectories(sDir, "*", SearchOption.AllDirectories))
+            {
+                foreach (string f in Directory.GetFiles(d, "*.*"))
+                {
+                    //Console.WriteLine(f);
+                    //Console.WriteLine(System.IO.Path.GetExtension(f).ToLower());
+                    //Console.WriteLine(mediaExtensions.Contains(System.IO.Path.GetExtension(f).ToLower()));
+                    //Console.WriteLine(System.IO.Path.GetFileName(f));
+                    if (System.IO.Path.GetFileNameWithoutExtension(f).ToLower().Contains(searchTerm.ToLower()))
+                    {
+                        Regex re = new Regex(@"thumbnail");
+                        if (mediaExtensions.Contains(System.IO.Path.GetExtension(f).ToLower()))
+                        {
+                            if (!re.IsMatch(System.IO.Path.GetFileName(f)))
+                            {
+                                filesFound.Add(new file() { Path = f, FileName = System.IO.Path.GetFileName(f) });
+                                Console.WriteLine("Path = {0}, Filename = {1}", f, System.IO.Path.GetFileName(f));
+                            }
+                        }
+                    }
+                }
+                DirSearch(d, searchTerm);
+            }
+            //Console.WriteLine(filesFound.Count);
+            return filesFound;
+        }
         public class file
         {
             public string FileName { get; set; }
@@ -197,9 +235,12 @@ namespace VideoThumbnail
                     await Task.Delay(5);
                     progressBar.Value = 100;                    
                     images.ItemsSource = val;
+                    RenameName.Text = file;
+                    //System.Windows.MessageBox.Show(System.IO.Path.GetFileName(file));
                 }
                 //Loading thumbnails hides
                 Loading.Text = "";
+
             }
             catch (Exception ex)
             {
@@ -490,7 +531,156 @@ namespace VideoThumbnail
             //me.Position = (TimeSpan) me.Tag;
         }
 
-        
+        private void btnRename(object sender, RoutedEventArgs e)
+        {
+            RenameFile();
+        }
+        private void RenameFile()
+        {
+            //clip
+            string clipFolderPath = System.IO.Path.GetDirectoryName(VideoFiles.SelectedValue.ToString());
+            string clipFolderNameOri = System.IO.Path.GetFileNameWithoutExtension(VideoFiles.SelectedValue.ToString()) + "_clip";
+            string clipFolderNameNew = System.IO.Path.GetFileNameWithoutExtension(RenameName.Text) + "_clip";
+            System.Windows.MessageBox.Show(clipFolderNameOri + "\n" + clipFolderNameNew);
+            string oldClip = clipFolderPath + "\\" + clipFolderNameOri;
+            string newClip = clipFolderPath + "\\" + clipFolderNameNew;
+            System.Windows.MessageBox.Show(oldClip + "\n" + newClip);
+
+            //file
+            string oldFile = VideoFiles.SelectedValue.ToString();
+            string newFile = RenameName.Text;
+
+            images.ItemsSource = null;
+            try
+            {
+                CopyDirectory(oldClip, newClip, true);
+                //Directory.Move(oldClip, newClip);
+                Directory.Delete(oldClip, true);
+                System.Windows.MessageBox.Show("Rename Success");
+                Directory.Move(oldFile, newFile);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show("Rename Failed" + "\n" + ex);
+            }
+            RepopulateFiles();
+        }
+        private async void RepopulateFiles()
+        {
+            Loading.Text = "Getting files";
+            await Task.Delay(5);
+            List<file> files = DirSearch(FolderLocation.Text);
+            //files.Shuffle();
+            if (files != null)
+            {
+                VideoFiles.ItemsSource = files;
+                VideoFiles.DisplayMemberPath = "FileName";
+                VideoFiles.SelectedValuePath = "Path";
+            }
+            Loading.Text = "";
+        }
+        //method to copy folder
+        static void CopyDirectory(string sourceDir, string destinationDir, bool recursive)
+        {
+            // Get information about the source directory
+            var dir = new DirectoryInfo(sourceDir);
+
+            // Check if the source directory exists
+            if (!dir.Exists)
+                throw new DirectoryNotFoundException($"Source directory not found: {dir.FullName}");
+
+            // Cache directories before we start copying
+            DirectoryInfo[] dirs = dir.GetDirectories();
+
+            // Create the destination directory
+            Directory.CreateDirectory(destinationDir);
+
+            // Get the files in the source directory and copy to the destination directory
+            foreach (FileInfo file in dir.GetFiles())
+            {
+                string targetFilePath = System.IO.Path.Combine(destinationDir, file.Name);
+                file.CopyTo(targetFilePath);
+            }
+
+            // If recursive and copying subdirectories, recursively call this method
+            if (recursive)
+            {
+                foreach (DirectoryInfo subDir in dirs)
+                {
+                    string newDestinationDir = System.IO.Path.Combine(destinationDir, subDir.Name);
+                    CopyDirectory(subDir.FullName, newDestinationDir, true);
+                }
+            }
+        }
+
+        private void btnDeleteVideo(object sender, RoutedEventArgs e)
+        {
+            //clip folder
+            string clipFolderPath = System.IO.Path.GetDirectoryName(VideoFiles.SelectedValue.ToString());
+            string clipFolderNameOri = System.IO.Path.GetFileNameWithoutExtension(VideoFiles.SelectedValue.ToString()) + "_clip";
+            string oldClip = clipFolderPath + "\\" + clipFolderNameOri;
+            System.Windows.MessageBox.Show(oldClip);
+
+            //file
+            string oldFile = VideoFiles.SelectedValue.ToString();
+            System.Windows.MessageBox.Show(oldFile);
+
+            images.ItemsSource = null;
+            try
+            {
+                Directory.Delete(oldClip, true);
+                File.Delete(oldFile);
+                System.Windows.MessageBox.Show("Delete Success");
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show("Delete Failed" + "\n" + ex);
+            }
+            RepopulateFiles();
+        }
+
+        private void btnSearch_Click(object sender, RoutedEventArgs e)
+        {
+            SearchWithSearchTerm();
+        }
+        private async void SearchWithSearchTerm()
+        {
+            Loading.Text = "Getting files";
+            await Task.Delay(5);
+            List<file> files = DirSearch(FolderLocation.Text, SearchTerm.Text);
+            //files.Shuffle();
+            if (files != null)
+            {
+                VideoFiles.ItemsSource = files;
+                VideoFiles.DisplayMemberPath = "FileName";
+                VideoFiles.SelectedValuePath = "Path";
+            }
+            Loading.Text = "";
+        }
+
+        private void SearchTermOnKeyDownHandler(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                SearchWithSearchTerm();
+            }
+        }
+
+        private void RenameKeyDownHandler(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                RenameFile();
+            }
+        }
+
+        private void FolderKeyDownHandler(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                SearchFolder();
+            }
+        }
     }
 
     public class ImageChecker : INotifyPropertyChanged //Hold control and hit period to add the using for this
@@ -549,5 +739,21 @@ namespace VideoThumbnail
             }
         }
     }
+    static class ExtensionsClass
+    {
+        private static Random rng = new Random();
 
+        public static void Shuffle<T>(this IList<T> list)
+        {
+            int n = list.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = rng.Next(n + 1);
+                T value = list[k];
+                list[k] = list[n];
+                list[n] = value;
+            }
+        }
+    }
 }

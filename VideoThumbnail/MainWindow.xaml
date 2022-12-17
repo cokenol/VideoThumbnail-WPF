@@ -81,7 +81,7 @@
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
-        <TextBox x:Name="FolderLocation" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Top" TextWrapping="Wrap" Text="Folder Location" Width="284" Height="20" Margin="0,10,0,0"/>
+        <TextBox x:Name="FolderLocation" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Top" KeyDown="FolderKeyDownHandler" TextWrapping="Wrap" Text="E:/P" Width="284" Height="20" Margin="0,10,0,0"/>
 
 
         <!--<Border Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="1" Grid.RowSpan="4" BorderBrush="black" BorderThickness="3"></Border>-->
@@ -94,7 +94,14 @@
         <TextBlock x:Name="OverallProgress" Text="Overall Progress:" Grid.Column="3" FontSize="10" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="23,32,0,0"/>
         <TextBlock x:Name="ThumbnailProgressTitle" Text="Thumbnail Progress:" Grid.Column="3" FontSize="10" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="23,86,0,0"/>
 
-
+        <TextBlock Name="Rename" Grid.Column="0"  Text="Rename To:" Margin="10,124,320,0"/>
+        <TextBox Name="RenameName" Text="FileName will show up here" Grid.ColumnSpan="3" Margin="80,124,50,5" KeyDown="RenameKeyDownHandler"></TextBox>
+        <Button x:Name="RenameBtn" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Top" Click="btnRename" Content="Rename" Margin="0,125,189,0" Grid.ColumnSpan="2" />
+        <Button x:Name="DeleteVideo" HorizontalAlignment="Left" VerticalAlignment="Top" Click="btnDeleteVideo" Content="Delete Video"  Width="92" Margin="264,69,0,0"/>
+        <Label Grid.Column="1" Content="Search Term:" HorizontalAlignment="Left" Margin="10,32,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="SearchTerm" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" TextWrapping="Wrap" KeyDown="SearchTermOnKeyDownHandler" Text="SBB" Width="184" Height="20" Margin="100,35,0,0" Grid.ColumnSpan="2"/>
+        <Button x:Name="btnSearch" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Top" Click="btnSearch_Click" Content="Search" Margin="103,35,0,0" Width="47" />
+        <Label Content="Folder:" HorizontalAlignment="Left" Margin="344,7,0,0" VerticalAlignment="Top"/>
 
     </Grid>
 </Window>
