@@ -5,17 +5,18 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VideoThumbnail" d:DataContext="{d:DesignInstance Type=local:ImageChecker}"
         mc:Ignorable="d"
-        Title="VideoThumbnail" Height="700" Width="1000" MinHeight="700" MinWidth="800" Icon="VideoPreviewer.ico">
+        Title="VideoThumbnail" Height="700" Width="1300" MinHeight="700" MinWidth="800" Icon="VideoPreviewer.ico">
     <Grid ShowGridLines="false">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="400"></ColumnDefinition>
             <ColumnDefinition Width="200"></ColumnDefinition>
             <ColumnDefinition Width="200"></ColumnDefinition>
             <ColumnDefinition Width="200"></ColumnDefinition>
+            <ColumnDefinition Width="300"></ColumnDefinition>
             <ColumnDefinition Width="*"></ColumnDefinition>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="150"></RowDefinition>
+            <RowDefinition Height="200"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
@@ -94,14 +95,17 @@
         <TextBlock x:Name="OverallProgress" Text="Overall Progress:" Grid.Column="3" FontSize="10" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="23,32,0,0"/>
         <TextBlock x:Name="ThumbnailProgressTitle" Text="Thumbnail Progress:" Grid.Column="3" FontSize="10" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="23,86,0,0"/>
 
-        <TextBlock Name="Rename" Grid.Column="0"  Text="Rename To:" Margin="10,124,320,0"/>
-        <TextBox Name="RenameName" Text="FileName will show up here" Grid.ColumnSpan="3" Margin="80,124,50,5" KeyDown="RenameKeyDownHandler"></TextBox>
+        <TextBlock Name="Rename" Grid.Column="0"  Text="Rename To:" Margin="10,124,320,56"/>
+        <TextBox Name="RenameName" Text="FileName will show up here" Grid.ColumnSpan="3" Margin="80,124,50,55" KeyDown="RenameKeyDownHandler"></TextBox>
         <Button x:Name="RenameBtn" Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Top" Click="btnRename" Content="Rename" Margin="0,125,189,0" Grid.ColumnSpan="2" />
         <Button x:Name="DeleteVideo" HorizontalAlignment="Left" VerticalAlignment="Top" Click="btnDeleteVideo" Content="Delete Video"  Width="92" Margin="264,69,0,0"/>
         <Label Grid.Column="1" Content="Search Term:" HorizontalAlignment="Left" Margin="10,32,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="SearchTerm" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" TextWrapping="Wrap" KeyDown="SearchTermOnKeyDownHandler" Text="SBB" Width="184" Height="20" Margin="100,35,0,0" Grid.ColumnSpan="2"/>
         <Button x:Name="btnSearch" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Top" Click="btnSearch_Click" Content="Search" Margin="103,35,0,0" Width="47" />
         <Label Content="Folder:" HorizontalAlignment="Left" Margin="344,7,0,0" VerticalAlignment="Top"/>
+        <TextBlock x:Name="TagLabel" Grid.Column="0"  Text="Add tags:" Margin="10,150,320,30"/>
+        <TextBox x:Name="tbAddTag" Text="SBB" Margin="80,150,220,29" KeyDown="AddTagKeyDownHandler" />
+        <Button x:Name="AddTagBtn" HorizontalAlignment="Right" VerticalAlignment="Top" Click="btnAddTag" Content="Add Tag" Margin="0,150,153,0" />
 
     </Grid>
 </Window>

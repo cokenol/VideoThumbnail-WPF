@@ -681,6 +681,56 @@ namespace VideoThumbnail
                 SearchFolder();
             }
         }
+
+        private void AddTagKeyDownHandler(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                AddTag();
+            }
+        }
+
+        private void btnAddTag(object sender, RoutedEventArgs e)
+        {
+            AddTag();
+        }
+        private void AddTag()
+        {
+            //clip
+            //string clipFolderPath = System.IO.Path.GetDirectoryName(VideoFiles.SelectedValue.ToString());
+            //string clipFolderNameOri = System.IO.Path.GetFileNameWithoutExtension(VideoFiles.SelectedValue.ToString()) + "_clip";
+            //string clipFolderNameNew = System.IO.Path.GetFileNameWithoutExtension(RenameName.Text) + "_clip";
+            //System.Windows.MessageBox.Show(clipFolderNameOri + "\n" + clipFolderNameNew);
+            //string oldClip = clipFolderPath + "\\" + clipFolderNameOri;
+            //string newClip = clipFolderPath + "\\" + clipFolderNameNew;
+            //System.Windows.MessageBox.Show(oldClip + "\n" + newClip);
+
+            //file
+            string oldFile = VideoFiles.SelectedValue.ToString();
+            //string newFile = RenameName.Text;
+
+            images.ItemsSource = null;
+            try
+            {
+                //CopyDirectory(oldClip, newClip, true);
+                //Directory.Move(oldClip, newClip);
+                //Directory.Delete(oldClip, true);
+                //System.Windows.MessageBox.Show("Rename Success");
+                //Directory.Move(oldFile, newFile);
+                var shellFile = ShellFile.FromFilePath(oldFile);
+                if (tbAddTag.Text != "")
+                {
+                    var tag = "=" + tbAddTag.Text + "=";
+                    string[] keywords = new string[] { tag };
+                    shellFile.Properties.System.Keywords.Value = keywords;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show("Add tag Failed" + "\n" + ex);
+            }
+            //RepopulateFiles();
+        }
     }
 
     public class ImageChecker : INotifyPropertyChanged //Hold control and hit period to add the using for this
